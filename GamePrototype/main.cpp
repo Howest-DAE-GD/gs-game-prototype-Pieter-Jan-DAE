@@ -1,7 +1,26 @@
-#include "pch.h"
-#include <ctime>
-#include "Game.h"
+#pragma once
+//ML Detection Extension
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <cstdlib>
+#include <crtdbg.h>
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+#endif
+// SDL and OpenGL Includes
+#pragma warning(disable : 26812)
+#pragma warning(disable : 4820)
+#include <SDL.h>
+#include <SDL_opengl.h>
+#include <SDL_ttf.h> 
+#include <SDL_mixer.h> 
+#include <SDL_image.h>
 
+#include <ctime>
+#include "structs.h"
+#include "SVGParser.h"
+
+import Game;
 
 void StartHeapControl();
 void DumpMemoryLeaks();
@@ -12,7 +31,7 @@ int SDL_main(int argv, char** args)
 
 	StartHeapControl();
 
-	Game* pGame{ new Game{ Window{ "Project name - Name, first name - 1DAEXX", 846.f , 500.f } } };
+	Game* pGame{ new Game{ Window{ "The Cult - Vandenberghe, Pieter-Jan - DAEmployed", 1200 , 800 } } };
 	pGame->Run();
 	delete pGame;
 
