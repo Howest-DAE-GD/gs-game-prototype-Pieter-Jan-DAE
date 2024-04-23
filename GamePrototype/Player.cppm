@@ -18,6 +18,7 @@ export class Player final : public GameObject
 public:
 	int m_Id;
 	float m_Health = 100;
+	const float MAX_HEALTH = 100;
 	std::vector<Attire> m_Attire;
 	std::chrono::steady_clock::time_point m_DropTime;
 	std::chrono::steady_clock::time_point m_AttackTime;
@@ -42,11 +43,22 @@ public:
 		t.Position = m_Position;
 		t.ApplyTransformation();
 		utils::FillEllipse(Point2f{ 0, 7.f / 6.f * S }, S / 3.f, S / 3.f);
+		drawHealth();
 		t.ResetTransformation();
 		for (Attire a : m_Attire)
 		{
 			a.Draw();
 		}
+	}
+
+	void drawHealth() const
+	{
+		constexpr float barW = 2 * S;
+		const float y = 2 * S;
+		utils::SetColor({ 0, 1, 0, 1 });
+		utils::DrawLine(-barW / 2, y, barW / 2, y, 4);
+		utils::SetColor({ 1, 0, 0, 1 });
+		utils::DrawLine(barW / 2 - barW * (MAX_HEALTH - m_Health) / MAX_HEALTH, y, barW / 2, y, 4);
 	}
 
 	void Update(const float elapsedSec) override
@@ -135,7 +147,7 @@ public:
 	void loseHealth(const float h)
 	{
 		m_Health -= h;
-		if (m_Health < 0)
+		if (m_Health <= 0.01)
 		{
 			m_Visible = false;
 		}
