@@ -16,9 +16,9 @@ import Spawner;
 
 export class Game : public BaseGame
 {
-	std::vector<GameObject> m_PlayerPool{};
+	float BASE_SPEED = 200.f;
+	std::vector<Player> m_PlayerPool{};
 	std::vector<Attire> m_AttirePool{};
-	Player m_Player{ { 100.f, 100.f } };
 	Spawner m_Spawner;
 
 public:
@@ -44,37 +44,44 @@ public:
 		if (pStates[SDL_SCANCODE_RIGHT] || pStates[SDL_SCANCODE_D])
 		{
 			//std::cout << "Right arrow key is down\n";
-			m_Player.m_Position.x += 100.f * elapsedSec;
+			m_PlayerPool[0].m_Position.x += BASE_SPEED * elapsedSec;
 		}
 		if (pStates[SDL_SCANCODE_LEFT] || pStates[SDL_SCANCODE_A])
 		{
 			//std::cout << "Left and up arrow keys are down\n";
-			m_Player.m_Position.x -= 100.f * elapsedSec;
+			m_PlayerPool[0].m_Position.x -= BASE_SPEED * elapsedSec;
 		}
 		if (pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_W])
 		{
 			//std::cout << "Right arrow key is down\n";
-			m_Player.m_Position.y += 100.f * elapsedSec;
+			m_PlayerPool[0].m_Position.y += BASE_SPEED * elapsedSec;
 		}
 		if (pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_S])
 		{
 			//std::cout << "Left and up arrow keys are down\n";
-			m_Player.m_Position.y -= 100.f * elapsedSec;
+			m_PlayerPool[0].m_Position.y -= BASE_SPEED * elapsedSec;
 		}
-
-		for (auto& obj : m_AttirePool) m_Player.PickUp(obj);
-
-		m_Player.Update(elapsedSec);
+		if (pStates[SDL_SCANCODE_E])
+		{
+			for (auto& attire : m_AttirePool) m_PlayerPool[0].PickUp(attire);
+		}
+		if (pStates[SDL_SCANCODE_Q])
+		{
+			m_PlayerPool[0].Drop(m_AttirePool);
+		}
+		if (pStates[SDL_SCANCODE_SPACE])
+		{
+			m_PlayerPool[0].Attack(m_PlayerPool);
+		}
+		for (auto& player : m_PlayerPool) player.Update(elapsedSec);
 		m_Spawner.Spawn(m_AttirePool);
 	}
 
 	void Draw() const override
 	{
 		ClearBackground();
-		m_Player.Draw();
-		for (auto& a : m_AttirePool) {
-			a.Draw();
-		}
+		for (auto& player : m_PlayerPool) player.Draw();
+		for (auto& a : m_AttirePool) a.Draw();
 	}
 
 	// Event handling
@@ -145,6 +152,8 @@ private:
 	void Initialize()
 	{
 		m_Spawner = {};
+		m_PlayerPool.push_back({ 0, {100.f, 100.f} });
+		m_PlayerPool.push_back({ 1, {400.f, 400.f} });
 		//m_Player.m_Shape = std::vector<Point2f>{ {-10, -10}, {0, 10}, {10, -10} };
 		//m_Player.PickUp(hat);
 		//m_Player.PickUp(cane);

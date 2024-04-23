@@ -9,7 +9,7 @@ export module Attire;
 import GameObject;
 import Random;
 
-export class Attire : public GameObject
+export class Attire final : public GameObject
 {
 public:
 
