@@ -1,0 +1,27 @@
+{
+  "name": "thecultserver",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Howest-DAE-GD/gs-game-prototype-Pieter-Jan-DAE.git"
+  },
+  "author": "Pieter-Jan Vandenberghe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Howest-DAE-GD/gs-game-prototype-Pieter-Jan-DAE/issues"
+  },
+  "homepage": "https://github.com/Howest-DAE-GD/gs-game-prototype-Pieter-Jan-DAE#readme",
+  "dependencies": {
+    "@koa/bodyparser": "^5.1.1",
+    "koa": "^2.15.3",
+    "koa-router": "^12.0.1",
+    "uuid": "^9.0.1"
+  }
+}
