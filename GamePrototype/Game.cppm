@@ -44,22 +44,22 @@ public:
 		if (pStates[SDL_SCANCODE_RIGHT] || pStates[SDL_SCANCODE_D])
 		{
 			//std::cout << "Right arrow key is down\n";
-			m_PlayerPool[0].m_Position.x += BASE_SPEED * elapsedSec;
+			m_PlayerPool[0].Move({ BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_LEFT] || pStates[SDL_SCANCODE_A])
 		{
-			//std::cout << "Left and up arrow keys are down\n";
-			m_PlayerPool[0].m_Position.x -= BASE_SPEED * elapsedSec;
+			//std::cout << "Left arrow key is down\n";
+			m_PlayerPool[0].Move({ -BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_W])
 		{
-			//std::cout << "Right arrow key is down\n";
-			m_PlayerPool[0].m_Position.y += BASE_SPEED * elapsedSec;
+			//std::cout << "Up arrow key is down\n";
+			m_PlayerPool[0].Move({ 0, BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_S])
 		{
-			//std::cout << "Left and up arrow keys are down\n";
-			m_PlayerPool[0].m_Position.y -= BASE_SPEED * elapsedSec;
+			//std::cout << "Down arrow key is down\n";
+			m_PlayerPool[0].Move({ 0, -BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_E])
 		{

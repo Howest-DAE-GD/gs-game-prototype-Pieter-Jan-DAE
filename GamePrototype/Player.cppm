@@ -70,6 +70,20 @@ public:
 		}
 	}
 
+	void Move(const Vector2f movement, float left, float right, float top, float bottom)
+	{
+		const float pLeft = left + m_Size.x / 2;
+		const float pRight = right - m_Size.x / 2;
+		const float pTop = top - m_Size.y / 2;
+		const float pBottom = bottom + m_Size.y / 2;
+		constexpr float epsilon = 0.001f;
+		m_Position += movement;
+		if (m_Position.x < pLeft) m_Position.x = pLeft + epsilon;
+		if (m_Position.x > pRight) m_Position.x = pRight - epsilon;
+		if (m_Position.y < pBottom) m_Position.y = pBottom + epsilon;
+		if (m_Position.y > pTop) m_Position.y = pTop + epsilon;
+	}
+
 	void PickUp(Attire& a)
 	{
 		if (a.m_Visible && utils::IsOverlapping(a.BoundingBox(), BoundingBox()) && !hasAttire(a))
