@@ -1,49 +1,49 @@
 module;
 
+#include <array>
 #include <vector>
-#include "structs.h"
 #include "Vector2f.h"
 
 export module Attire;
 
+import Drawable;
 import GameObject;
-import Random;
 
-export class Attire final : public GameObject
+export struct AttireInfo
 {
-public:
+	std::string id;
+	Point2f pos;
+	int type;
+};
 
-	enum AttireType
+export class Attire : public GameObject
+{
+	int m_Type;
+
+public:
+	Attire(const std::string id, const Point2f pos, const int type)
+		: GameObject(id, getDrawable(type), pos), m_Type{ type }
+	{}
+
+	int getType() const
 	{
-		HAT,
-		CANE
+		return m_Type;
+	}
+
+	enum Type
+	{
+		HAT_T,
+		CANE_T
 	};
 
-	Vector2f m_Offset;
-	AttireType m_Type;
+	static inline const Drawable& HAT = Drawable({ {{-10,-5},{0,5},{10,-5}} }, { 1,0,0,1 }, { 0, 30 });
+	static inline const Drawable& CANE = Drawable({ {{0, -15}, {0,15}}, {{-5, 15}, {5,5}}, {{-5, 5}, {5,15}} }, { 0,0,255,255 }, { 20, 20 });
 
-	Attire(AttireType type, Point2f position, Vector2f offset, std::vector<std::vector<Point2f>> shapes, Color4f color) : GameObject(position, shapes, color), m_Type{ type }, m_Offset{ offset } {}
-	Attire(AttireType type, Vector2f offset, std::vector<std::vector<Point2f>> shapes, Color4f color) : GameObject(shapes, color), m_Type{ type }, m_Offset{ offset } {}
-	Attire(const Attire& a) : GameObject(a.m_Position, a.m_Shapes, a.m_Color), m_Type{ a.m_Type }, m_Offset{ a.m_Offset }
-	{
-		m_Visible = a.m_Visible;
-	}
-	~Attire() override = default;
+	static inline constexpr std::array<Type, 2> TYPES = { HAT_T, CANE_T };
+	static inline const std::array<Drawable, 2> DRAWABLES = { HAT, CANE };
 
-	static Attire Hat()
+	static Drawable getDrawable(const int i)
 	{
-		const Point2f pos = { Generate.Float(100, 1100), Generate.Float(100, 700) };
-		const Vector2f offset = { 0, 30 };
-		const std::vector<std::vector<Point2f>> shapes = { {{-10,-5},{0,5},{10,-5}} };
-		const Color4f color = { 1,0,0,1 };
-		return Attire(HAT, pos, offset, shapes, color);
-	}
-	static Attire Cane()
-	{
-		const Point2f pos = { Generate.Float(100, 1100), Generate.Float(100, 700) };
-		const Vector2f offset = { 20, 20 };
-		const std::vector<std::vector<Point2f>> shapes = { {{0, -15}, {0,15}}, {{-5, 15}, {5,5}}, {{-5, 5}, {5,15}} };
-		const Color4f color = { 0,0,255,255 };
-		return Attire(CANE, pos, offset, shapes, color);
+		return DRAWABLES[i];
 	}
 };

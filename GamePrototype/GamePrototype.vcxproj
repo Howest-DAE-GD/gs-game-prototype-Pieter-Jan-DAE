@@ -149,6 +149,7 @@ xcopy "$(SolutionDir)Resources\*.*" "$(TargetDir)" /y /d /s</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Attire.cppm" />
+    <ClCompile Include="Drawable.cppm" />
     <ClCompile Include="Game.cppm" />
     <ClCompile Include="GameObject.cppm" />
     <ClCompile Include="main.cpp" />

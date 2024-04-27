@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <numeric>
 #include <random>
 
 #include "structs.h"
@@ -12,27 +13,38 @@ export module Player;
 
 import Attire;
 import GameObject;
+import Random;
+
+export struct PlayerInfo
+{
+	std::string id;
+	Point2f pos;
+	float health;
+	float maxHealth;
+	std::vector<bool> attire;
+};
 
 export class Player final : public GameObject
 {
-public:
-	int m_Id;
-	float m_Health = 100;
-	const float MAX_HEALTH = 100;
-	std::vector<Attire> m_Attire;
-	std::chrono::steady_clock::time_point m_DropTime;
+protected:
+	float m_Health;
+	float m_MaxHealth;
+	std::vector<bool> m_Attire;
 	std::chrono::steady_clock::time_point m_AttackTime;
+	inline static constexpr float SIZE = 20;
 
-	Player(const int id, const Point2f position) : GameObject(position, PlayerShape(), { 255.f, 255.f, 255.f, 255.f }),
-		m_Id{ id },
-		m_DropTime{ std::chrono::steady_clock::now() },
+public:
+	Player(const std::string& id, const Point2f pos, float health = 100, float maxHealth = 100) :
+		GameObject(id, getDrawable(), pos),
+		m_Health{ health },
+		m_MaxHealth{ maxHealth },
 		m_AttackTime{ std::chrono::steady_clock::now() }
 	{
-	}
-
-	const int& getId() const
-	{
-		return m_Id;
+		m_Attire.resize(Attire::TYPES.size());
+		for (const int t : Attire::TYPES)
+		{
+			m_Attire[t] = false;
+		}
 	}
 
 	void Draw() const override
@@ -42,32 +54,23 @@ public:
 		Transform t{};
 		t.Position = m_Position;
 		t.ApplyTransformation();
-		utils::FillEllipse(Point2f{ 0, 7.f / 6.f * S }, S / 3.f, S / 3.f);
+		utils::FillEllipse(Point2f{ 0, 7.f / 6.f * SIZE }, SIZE / 3.f, SIZE / 3.f);
+		for (int i = 0; i < m_Attire.size(); ++i)
+		{
+			if (m_Attire[i]) Attire::getDrawable(i).Draw(true);
+		}
 		drawHealth();
 		t.ResetTransformation();
-		for (Attire a : m_Attire)
-		{
-			a.Draw();
-		}
 	}
 
 	void drawHealth() const
 	{
-		constexpr float barW = 2 * S;
-		const float y = 2 * S;
+		constexpr float barW = 2 * SIZE;
+		const float y = 2 * SIZE;
 		utils::SetColor({ 0, 1, 0, 1 });
 		utils::DrawLine(-barW / 2, y, barW / 2, y, 4);
 		utils::SetColor({ 1, 0, 0, 1 });
-		utils::DrawLine(barW / 2 - barW * (MAX_HEALTH - m_Health) / MAX_HEALTH, y, barW / 2, y, 4);
-	}
-
-	void Update(const float elapsedSec) override
-	{
-		GameObject::Update(elapsedSec);
-		for (Attire& a : m_Attire)
-		{
-			a.m_Position = m_Position + a.m_Offset;
-		}
+		utils::DrawLine(barW / 2 - barW * (m_MaxHealth - m_Health) / m_MaxHealth, y, barW / 2, y, 4);
 	}
 
 	void Move(const Vector2f movement, float left, float right, float top, float bottom)
@@ -84,78 +87,70 @@ public:
 		if (m_Position.y > pTop) m_Position.y = pTop + epsilon;
 	}
 
-	void PickUp(Attire& a)
+	bool PickUp(const Attire& a)
 	{
-		if (a.m_Visible && utils::IsOverlapping(a.BoundingBox(), BoundingBox()) && !hasAttire(a))
+		if (!hasAttire(a.getType()) && a.isVisible() && isOverlapping(a))
 		{
-			m_Attire.push_back({ a });
-			a.m_Visible = false;
+			m_Attire[a.getType()] = true;
+			return true;
 		}
+		return false;
 	}
 
-	void Drop(std::vector<Attire>& pool)
+	bool Drop(std::vector<Attire>& pool)
 	{
-		if (m_Attire.size() > 0)
+		for (int type = static_cast<int>(m_Attire.size()) - 1; type >= 0; --type)
 		{
-			std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-			if (std::chrono::duration<float>(now - m_DropTime).count() > 1.f)
+			if (m_Attire[type] == true)
 			{
-				m_DropTime = now;
-				Attire a = { m_Attire.back() };
-				a.m_Visible = true;
-				a.m_Position = { m_Position };
+				//m_DropTime = now;
+				m_Attire[type] = false;
+				const auto a = Attire(generate_uuid_v4(), m_Position, type);
 				pool.push_back(a);
-				m_Attire.pop_back();
+				return true;
 			}
 		}
+		return false;
 	}
 
 	void Attack(std::vector<Player>& playerPool)
 	{
-		std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 		if (std::chrono::duration<float>(now - m_AttackTime).count() <= 1.f)
 		{
 			return;
 		}
-		m_AttackTime = now;
 
-		const int seed = static_cast<int>(std::chrono::system_clock::now().time_since_epoch().count());
-		std::vector<int> ids(playerPool.size());
-		std::ranges::transform(playerPool, ids.begin(), [](Player& p) { return p.getId(); });
+		std::vector<int> players(playerPool.size());
+		std::iota(players.begin(), players.end(), 0);
+		std::random_device rd;
+		std::default_random_engine rng(rd());
+		std::ranges::shuffle(players, rng);
 
-		std::ranges::shuffle(ids, std::default_random_engine(seed));
-
-		for (int id : ids)
+		for (int i = 0; i < players.size(); ++i)
 		{
-			if (id != m_Id && !isInSameCult(playerPool[id]))
+			if (auto& p = playerPool[players[i]]; p.getId() != m_Id && !isInSameCult(p) && isOverlapping(p))
 			{
-				playerPool[id].loseHealth(20);
+				m_AttackTime = now;
+				p.loseHealth(20);
+				return;
 			}
 		}
 	}
 
 	bool isInSameCult(const Player& p) const
 	{
-		if (p.getAttireCount() != getAttireCount()) return false;
-		for (auto& playerAttire : m_Attire)
+		for (int type = 0; type < m_Attire.size(); ++type)
 		{
-			if (!hasAttire(playerAttire)) return false;
+			if (hasAttire(type) != p.hasAttire(type)) return false;
 		}
 		return true;
 	}
 
-	size_t getAttireCount() const
+	bool hasAttire(int type) const
 	{
-		return m_Attire.size();
-	}
-
-	bool hasAttire(const Attire& a) const
-	{
-		for (auto& playerAttire : m_Attire)
-		{
-			if (a.m_Type == playerAttire.m_Type) return true;
-		}
-		return false;
+		if (type < 0 || type >= m_Attire.size()) return false;
+		return m_Attire[type];
 	}
 
 	void loseHealth(const float h)
@@ -167,24 +162,22 @@ public:
 		}
 	}
 
-	inline static constexpr float S = 20;
-
-	static std::vector<std::vector<Point2f>> PlayerShape()
+	static Drawable getDrawable()
 	{
-		Point2f leftFoot = { -S, -1.5 * S };
-		Point2f rightFoot = { S, -1.5 * S };
-		Point2f crotch = { 0, -0.5 * S };
-		Point2f shoulder = { 0, 0.5 * S };
-		Point2f leftHand = { -S, 0.5 * S };
-		Point2f rightHand = { S, 0.5 * S };
-		Point2f head = { 0, 1.5 * S };
-		return {
+		Point2f leftFoot = { -SIZE, -1.5 * SIZE };
+		Point2f rightFoot = { SIZE, -1.5 * SIZE };
+		Point2f crotch = { 0, -0.5 * SIZE };
+		Point2f shoulder = { 0, 0.5 * SIZE };
+		Point2f leftHand = { -SIZE, 0.5 * SIZE };
+		Point2f rightHand = { SIZE, 0.5 * SIZE };
+		Point2f head = { 0, 1.5 * SIZE };
+		return Drawable({
 			{leftFoot, crotch},
 			{rightFoot, crotch},
 			{crotch, shoulder},
 			{leftHand, shoulder},
 			{rightHand, shoulder},
 			{shoulder, head}
-		};
+			});
 	}
 };

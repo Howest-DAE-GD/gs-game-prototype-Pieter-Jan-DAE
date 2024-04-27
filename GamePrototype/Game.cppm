@@ -61,18 +61,7 @@ public:
 			//std::cout << "Down arrow key is down\n";
 			m_PlayerPool[0].Move({ 0, -BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
-		if (pStates[SDL_SCANCODE_E])
-		{
-			for (auto& attire : m_AttirePool) m_PlayerPool[0].PickUp(attire);
-		}
-		if (pStates[SDL_SCANCODE_Q])
-		{
-			m_PlayerPool[0].Drop(m_AttirePool);
-		}
-		if (pStates[SDL_SCANCODE_SPACE])
-		{
-			m_PlayerPool[0].Attack(m_PlayerPool);
-		}
+		// Update game state
 		for (auto& player : m_PlayerPool) player.Update(elapsedSec);
 		m_Spawner.Spawn(m_AttirePool);
 	}
@@ -87,7 +76,25 @@ public:
 	// Event handling
 	void ProcessKeyDownEvent(const SDL_KeyboardEvent& e) override
 	{
-		//std::cout << "KEYDOWN event: " << e.keysym.sym << std::endl;
+		if (e.keysym.scancode == SDL_SCANCODE_Q)
+		{
+			m_PlayerPool[0].Drop(m_AttirePool);
+		}
+		if (e.keysym.scancode == SDL_SCANCODE_E)
+		{
+			for (int i = static_cast<int>(m_AttirePool.size()) - 1; i >= 0; --i)
+			{
+				if (m_PlayerPool[0].PickUp(m_AttirePool[i]))
+				{
+					m_AttirePool.erase(m_AttirePool.begin() + i);
+					return;
+				}
+			}
+		}
+		if (e.keysym.scancode == SDL_SCANCODE_SPACE)
+		{
+			m_PlayerPool[0].Attack(m_PlayerPool);
+	}
 	}
 
 	void ProcessKeyUpEvent(const SDL_KeyboardEvent& e) override
@@ -152,8 +159,8 @@ private:
 	void Initialize()
 	{
 		m_Spawner = {};
-		m_PlayerPool.push_back({ 0, {100.f, 100.f} });
-		m_PlayerPool.push_back({ 1, {400.f, 400.f} });
+		m_PlayerPool.push_back({ generate_uuid_v4(), {100.f, 100.f} });
+		m_PlayerPool.push_back({ generate_uuid_v4(), {400.f, 400.f} });
 		//m_Player.m_Shape = std::vector<Point2f>{ {-10, -10}, {0, 10}, {10, -10} };
 		//m_Player.PickUp(hat);
 		//m_Player.PickUp(cane);
