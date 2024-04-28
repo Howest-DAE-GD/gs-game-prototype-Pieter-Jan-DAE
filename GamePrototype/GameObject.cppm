@@ -8,13 +8,12 @@ import Drawable;
 
 export class GameObject : public Drawable
 {
-protected:
+public:
 	std::string m_Id;
 	Point2f m_Position;
 	Vector2f m_Velocity;
 	bool m_Visible = true;
 
-public:
 	GameObject(std::string id, const Drawable& drawable, const Point2f position,
 		const Vector2f velocity = { 0.f, 0.f }, const bool visible = true) :
 		Drawable(drawable),
@@ -24,7 +23,7 @@ public:
 		m_Visible{ visible }
 	{}
 
-	bool isVisible() const
+	bool IsVisible() const
 	{
 		return m_Visible;
 	}
@@ -40,7 +39,7 @@ public:
 		m_Position += m_Velocity * elapsedSeconds;
 	}
 
-	bool isOverlapping(const GameObject& o) const
+	bool IsOverlapping(const GameObject& o) const
 	{
 		Rectf a = o.BoundingBox();
 		a.left += o.m_Position.x;
@@ -51,7 +50,7 @@ public:
 		return utils::IsOverlapping(a, b);
 	}
 
-	const std::string& getId() const
+	const std::string& GetId() const
 	{
 		return m_Id;
 	}

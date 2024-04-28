@@ -1,6 +1,7 @@
 module;
 
 #include <iostream>
+#include <ranges>
 #include <SDL_opengl.h>
 #include <vector>
 #include "structs.h"
@@ -10,6 +11,7 @@ export module Game;
 
 import Attire;
 import GameObject;
+import GameState;
 import Player;
 import Random;
 import Spawner;
@@ -17,8 +19,7 @@ import Spawner;
 export class Game : public BaseGame
 {
 	float BASE_SPEED = 200.f;
-	std::vector<Player> m_PlayerPool{};
-	std::vector<Attire> m_AttirePool{};
+	GameState m_State;
 	Spawner m_Spawner;
 
 public:
@@ -41,59 +42,69 @@ public:
 	{
 		// Check keyboard state
 		const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+		auto& you = m_State.m_PlayerPool.at(m_State.m_PlayerId);
 		if (pStates[SDL_SCANCODE_RIGHT] || pStates[SDL_SCANCODE_D])
 		{
 			//std::cout << "Right arrow key is down\n";
-			m_PlayerPool[0].Move({ BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
+			you.Move({ BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_LEFT] || pStates[SDL_SCANCODE_A])
 		{
 			//std::cout << "Left arrow key is down\n";
-			m_PlayerPool[0].Move({ -BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
+			you.Move({ -BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_W])
 		{
 			//std::cout << "Up arrow key is down\n";
-			m_PlayerPool[0].Move({ 0, BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
+			you.Move({ 0, BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		if (pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_S])
 		{
 			//std::cout << "Down arrow key is down\n";
-			m_PlayerPool[0].Move({ 0, -BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
+			you.Move({ 0, -BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
 		}
 		// Update game state
-		for (auto& player : m_PlayerPool) player.Update(elapsedSec);
-		m_Spawner.Spawn(m_AttirePool);
+		for (auto& player : m_State.m_PlayerPool | std::views::values)
+		{
+			PlayerInfo pInfo{};
+			pInfo.id = player.GetId();
+			pInfo.pos = player.m_Position;
+			pInfo.health = player.m_Health;
+			pInfo.maxHealth = player.m_MaxHealth;
+			player.Update(pInfo);
+		}
+		m_Spawner.Spawn(m_State);
 	}
 
 	void Draw() const override
 	{
 		ClearBackground();
-		for (auto& player : m_PlayerPool) player.Draw();
-		for (auto& a : m_AttirePool) a.Draw();
+		for (auto& player : m_State.m_PlayerPool | std::views::values) player.Draw();
+		for (auto& a : m_State.m_AttirePool | std::views::values) a.Draw();
 	}
 
 	// Event handling
 	void ProcessKeyDownEvent(const SDL_KeyboardEvent& e) override
 	{
+		auto& you = m_State.m_PlayerPool.at(m_State.m_PlayerId);
 		if (e.keysym.scancode == SDL_SCANCODE_Q)
 		{
-			m_PlayerPool[0].Drop(m_AttirePool);
+			you.Drop(m_State.m_AttirePool);
 		}
 		if (e.keysym.scancode == SDL_SCANCODE_E)
 		{
-			for (int i = static_cast<int>(m_AttirePool.size()) - 1; i >= 0; --i)
+			for (auto& [id, attire] : m_State.m_AttirePool)
 			{
-				if (m_PlayerPool[0].PickUp(m_AttirePool[i]))
+				if (you.PickUp(attire))
 				{
-					m_AttirePool.erase(m_AttirePool.begin() + i);
+					m_State.m_AttirePool.erase(id);
 					return;
 				}
 			}
 		}
 		if (e.keysym.scancode == SDL_SCANCODE_SPACE)
 		{
-			m_PlayerPool[0].Attack(m_PlayerPool);
+			you.Attack(m_State.m_PlayerPool);
 	}
 	}
 

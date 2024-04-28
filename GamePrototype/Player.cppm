@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <chrono>
+#include <map>
 #include <numeric>
 #include <random>
+#include <ranges>
 
 #include "structs.h"
 #include "Transform.h"
@@ -26,16 +28,15 @@ export struct PlayerInfo
 
 export class Player final : public GameObject
 {
-protected:
+public:
 	float m_Health;
 	float m_MaxHealth;
 	std::vector<bool> m_Attire;
 	std::chrono::steady_clock::time_point m_AttackTime;
 	inline static constexpr float SIZE = 20;
 
-public:
 	Player(const std::string& id, const Point2f pos, float health = 100, float maxHealth = 100) :
-		GameObject(id, getDrawable(), pos),
+		GameObject(id, GetDrawable(), pos),
 		m_Health{ health },
 		m_MaxHealth{ maxHealth },
 		m_AttackTime{ std::chrono::steady_clock::now() }
@@ -45,6 +46,14 @@ public:
 		{
 			m_Attire[t] = false;
 		}
+	}
+
+	void Update(const PlayerInfo& pInfo)
+	{
+		if (pInfo.id != m_Id) return;
+		m_Position = pInfo.pos;
+		m_Health = pInfo.health;
+		m_MaxHealth = pInfo.maxHealth;
 	}
 
 	void Draw() const override
@@ -57,13 +66,13 @@ public:
 		utils::FillEllipse(Point2f{ 0, 7.f / 6.f * SIZE }, SIZE / 3.f, SIZE / 3.f);
 		for (int i = 0; i < m_Attire.size(); ++i)
 		{
-			if (m_Attire[i]) Attire::getDrawable(i).Draw(true);
+			if (m_Attire[i]) Attire::GetDrawable(i).Draw(true);
 		}
-		drawHealth();
+		DrawHealth();
 		t.ResetTransformation();
 	}
 
-	void drawHealth() const
+	void DrawHealth() const
 	{
 		constexpr float barW = 2 * SIZE;
 		const float y = 2 * SIZE;
@@ -89,31 +98,30 @@ public:
 
 	bool PickUp(const Attire& a)
 	{
-		if (!hasAttire(a.getType()) && a.isVisible() && isOverlapping(a))
+		if (!HasAttire(a.GetType()) && a.IsVisible() && IsOverlapping(a))
 		{
-			m_Attire[a.getType()] = true;
+			m_Attire[a.GetType()] = true;
 			return true;
 		}
 		return false;
 	}
 
-	bool Drop(std::vector<Attire>& pool)
+	bool Drop(std::map<std::string, Attire>& pool)
 	{
 		for (int type = static_cast<int>(m_Attire.size()) - 1; type >= 0; --type)
 		{
 			if (m_Attire[type] == true)
 			{
-				//m_DropTime = now;
 				m_Attire[type] = false;
-				const auto a = Attire(generate_uuid_v4(), m_Position, type);
-				pool.push_back(a);
+				const auto a = Attire(Generate_UUID(), m_Position, type);
+				pool.insert(std::pair<std::string, Attire>(a.GetId(), a));
 				return true;
 			}
 		}
 		return false;
 	}
 
-	void Attack(std::vector<Player>& playerPool)
+	void Attack(std::map<std::string, Player>& playerPool)
 	{
 		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 		if (std::chrono::duration<float>(now - m_AttackTime).count() <= 1.f)
@@ -127,33 +135,33 @@ public:
 		std::default_random_engine rng(rd());
 		std::ranges::shuffle(players, rng);
 
-		for (int i = 0; i < players.size(); ++i)
+		for (auto& p : playerPool | std::views::values)
 		{
-			if (auto& p = playerPool[players[i]]; p.getId() != m_Id && !isInSameCult(p) && isOverlapping(p))
+			if (p.GetId() != m_Id && !IsInSameCult(p) && IsOverlapping(p))
 			{
 				m_AttackTime = now;
-				p.loseHealth(20);
+				p.LoseHealth(20);
 				return;
 			}
 		}
 	}
 
-	bool isInSameCult(const Player& p) const
+	bool IsInSameCult(const Player& p) const
 	{
 		for (int type = 0; type < m_Attire.size(); ++type)
 		{
-			if (hasAttire(type) != p.hasAttire(type)) return false;
+			if (HasAttire(type) != p.HasAttire(type)) return false;
 		}
 		return true;
 	}
 
-	bool hasAttire(int type) const
+	bool HasAttire(int type) const
 	{
 		if (type < 0 || type >= m_Attire.size()) return false;
 		return m_Attire[type];
 	}
 
-	void loseHealth(const float h)
+	void LoseHealth(const float h)
 	{
 		m_Health -= h;
 		if (m_Health <= 0.01)
@@ -162,7 +170,7 @@ public:
 		}
 	}
 
-	static Drawable getDrawable()
+	static Drawable GetDrawable()
 	{
 		Point2f leftFoot = { -SIZE, -1.5 * SIZE };
 		Point2f rightFoot = { SIZE, -1.5 * SIZE };

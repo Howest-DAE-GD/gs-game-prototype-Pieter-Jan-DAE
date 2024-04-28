@@ -40,7 +40,7 @@ static std::mt19937                    gen(rd());
 static std::uniform_int_distribution<> dis(0, 15);
 static std::uniform_int_distribution<> dis2(8, 11);
 
-export std::string generate_uuid_v4() {
+export std::string Generate_UUID() {
 	std::stringstream ss;
 	int i;
 	ss << std::hex;

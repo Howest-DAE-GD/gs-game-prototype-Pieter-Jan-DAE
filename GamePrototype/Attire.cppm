@@ -22,10 +22,10 @@ export class Attire : public GameObject
 
 public:
 	Attire(const std::string id, const Point2f pos, const int type)
-		: GameObject(id, getDrawable(type), pos), m_Type{ type }
+		: GameObject(id, GetDrawable(type), pos), m_Type{ type }
 	{}
 
-	int getType() const
+	int GetType() const
 	{
 		return m_Type;
 	}
@@ -42,7 +42,7 @@ public:
 	static inline constexpr std::array<Type, 2> TYPES = { HAT_T, CANE_T };
 	static inline const std::array<Drawable, 2> DRAWABLES = { HAT, CANE };
 
-	static Drawable getDrawable(const int i)
+	static Drawable GetDrawable(const int i)
 	{
 		return DRAWABLES[i];
 	}

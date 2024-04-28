@@ -35,5 +35,8 @@
     <ClCompile Include="Drawable.cppm">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GameState.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

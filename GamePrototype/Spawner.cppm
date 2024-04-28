@@ -9,6 +9,8 @@ export module Spawner;
 
 import Attire;
 import GameObject;
+import GameState;
+import Player;
 import Random;
 
 export class Spawner
@@ -26,7 +28,7 @@ public:
 		m_StartTime = std::chrono::steady_clock::now();
 	}
 
-	void Spawn(std::vector<Attire>& attirePool)
+	void Spawn(GameState& gameState)
 	{
 		std::chrono::steady_clock::time_point t = std::chrono::steady_clock::now();
 		if (std::chrono::duration<float>(t - m_StartTime).count() > m_Counter * SPAWN_TIME_SECONDS
@@ -34,13 +36,19 @@ public:
 		{
 			if (0 <= m_Counter && m_Counter < HAT_COUNT)
 			{
-				const Point2f pos = { Generate.Float(100, 1100), Generate.Float(100, 700) };
-				attirePool.push_back(Attire(generate_uuid_v4(), pos, Attire::HAT_T));
+				AttireInfo aInfo{};
+				aInfo.id = Generate_UUID();
+				aInfo.pos = { Generate.Float(100, 1100), Generate.Float(100, 700) };
+				aInfo.type = Attire::HAT_T;
+				gameState.AddAttire(aInfo);
 			}
 			if (CANE_COUNT <= m_Counter && m_Counter < HAT_COUNT + CANE_COUNT)
 			{
-				const Point2f pos = { Generate.Float(100, 1100), Generate.Float(100, 700) };
-				attirePool.push_back(Attire(generate_uuid_v4(), pos, Attire::CANE_T));
+				AttireInfo aInfo{};
+				aInfo.id = Generate_UUID();
+				aInfo.pos = { Generate.Float(100, 1100), Generate.Float(100, 700) };
+				aInfo.type = Attire::CANE_T;
+				gameState.AddAttire(aInfo);
 			}
 			m_Counter += 1;
 		}
