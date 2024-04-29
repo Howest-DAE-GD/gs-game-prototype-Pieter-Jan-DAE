@@ -2,14 +2,51 @@ import { v4 as uuid } from 'uuid';
 
 export class Game {
     constructor(boundaries) {
+
+        // Game State
         this.boundaries = boundaries != undefined ? boundaries : { top: 1000, left: 0, right: 1000, bottom: 0 };
         this.players = {};
+        this.attire = {};
+        this.stateChanged = false;
+        this.started = false;
+        this.spawns = 0;
+        this.typeToSpawn = 0;
+
+        // Testing purposes
         const victim = new Player({ x: 0, y: 0 });
         this.players[victim.id] = victim;
-        this.attire = {};
         const a = new Attire({ x: 100, y: 100 }, Attire.TYPES.HAT);
         this.attire[a.id] = a;
-        this.stateChanged = false;
+    }
+
+    start() {
+        if(!this.started) {
+            console.log(`The game has started!`);
+            this.started = true;
+            setInterval(() => {
+                if (this.typeToSpawn <= Attire.TYPES.CANE) {
+                    this.spawnAttire(this.typeToSpawn);
+                    this.spawns += 1;
+                    if (this.spawns > 4) {
+                        this.spawns = 0;
+                        this.typeToSpawn++;
+                    }
+                }
+            }, 3000);
+        }
+    }
+
+    spawnAttire(type)
+    {
+        const offset = 100;
+        const pos = {
+            x: Math.floor(Math.random() * (this.boundaries.right - 2*offset) + offset),
+            y: Math.floor(Math.random() * (this.boundaries.top - 2*offset) + offset)
+        };
+        const a = new Attire(pos, type)
+        this.attire[a.id] = a;
+        this.stateChanged = true;
+        return a.id;
     }
 
     addPlayer() {

@@ -3,6 +3,7 @@ module;
 #include <map>
 #include <ranges>
 #include <string>
+#include <vector>
 
 export module GameState;
 
@@ -39,18 +40,36 @@ public:
 		else m_PlayerPool.insert(std::pair(pInfo.id, Player(pInfo.id, pInfo.pos, pInfo.health, pInfo.maxHealth)));
 	}
 
+	void UpdatePlayers(std::map<std::string, PlayerInfo>& playerUpdates)
+	{
+		for (const auto& pInfo : playerUpdates | std::views::values) {
+			UpdatePlayer(pInfo);
+		}
+		std::vector<std::string> idsToRemove;
+		for (const auto& id : m_PlayerPool | std::views::keys) {
+			if (!playerUpdates.contains(id)) idsToRemove.push_back(id);
+		}
+		for (const auto& id : idsToRemove) {
+			m_PlayerPool.erase(id);
+		}
+	}
+
 	void AddAttire(const AttireInfo& aInfo)
 	{
 		if (!m_AttirePool.contains(aInfo.id)) m_AttirePool.insert(std::pair(aInfo.id, Attire(aInfo.id, aInfo.pos, aInfo.type)));
 	}
 
-	void RemoveAttire(const std::map<std::string, AttireInfo>& aInfos)
+	void UpdateAttire(std::map<std::string, AttireInfo>& attireUpdates)
 	{
-		for (const auto& [id, attire] : std::views::reverse(m_AttirePool)) {
-			if (!aInfos.contains(id))
-			{
-				m_AttirePool.erase(id);
-			}
+		for (const auto& aInfo : attireUpdates | std::views::values) {
+			AddAttire(aInfo);
+		}
+		std::vector<std::string> idsToRemove;
+		for (const auto& id : m_AttirePool | std::views::keys) {
+			if (!attireUpdates.contains(id)) idsToRemove.push_back(id);
+		}
+		for (const auto& id : idsToRemove) {
+			m_AttirePool.erase(id);
 		}
 	}
 };

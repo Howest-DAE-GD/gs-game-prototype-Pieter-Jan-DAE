@@ -9,6 +9,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Libs">
+      <UniqueIdentifier>{d6168a20-3c47-4c6f-95c1-ce444aaccbd6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cppm">
@@ -32,11 +35,25 @@
     <ClCompile Include="Random.cppm">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NetworkClient.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parson.c">
+      <Filter>Libs</Filter>
+    </ClCompile>
     <ClCompile Include="Drawable.cppm">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GameState.cppm">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="httplib.h">
+      <Filter>Libs</Filter>
+    </ClInclude>
+    <ClInclude Include="parson.h">
+      <Filter>Libs</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

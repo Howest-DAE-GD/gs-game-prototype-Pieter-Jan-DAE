@@ -33,7 +33,7 @@ public:
 	float m_MaxHealth;
 	std::vector<bool> m_Attire;
 	std::chrono::steady_clock::time_point m_AttackTime;
-	inline static constexpr float SIZE = 20;
+	inline static constexpr float SIZE{ 20 };
 
 	Player(const std::string& id, const Point2f pos, float health = 100, float maxHealth = 100) :
 		GameObject(id, GetDrawable(), pos),
@@ -54,22 +54,26 @@ public:
 		m_Position = pInfo.pos;
 		m_Health = pInfo.health;
 		m_MaxHealth = pInfo.maxHealth;
+		m_Attire = pInfo.attire;
 	}
 
 	void Draw() const override
 	{
 		if (!m_Visible) return;
-		GameObject::Draw();
-		Transform t{};
-		t.Position = m_Position;
-		t.ApplyTransformation();
-		utils::FillEllipse(Point2f{ 0, 7.f / 6.f * SIZE }, SIZE / 3.f, SIZE / 3.f);
-		for (int i = 0; i < m_Attire.size(); ++i)
+		if (m_Health > 0)
 		{
-			if (m_Attire[i]) Attire::GetDrawable(i).Draw(true);
+			GameObject::Draw();
+			Transform t{};
+			t.Position = m_Position;
+			t.ApplyTransformation();
+			utils::FillEllipse(Point2f{ 0, 7.f / 6.f * SIZE }, SIZE / 3.f, SIZE / 3.f);
+			for (int i = 0; i < m_Attire.size(); ++i)
+			{
+				if (m_Attire[i]) Attire::GetDrawable(i).Draw(true);
+			}
+			DrawHealth();
+			t.ResetTransformation();
 		}
-		DrawHealth();
-		t.ResetTransformation();
 	}
 
 	void DrawHealth() const
@@ -96,13 +100,9 @@ public:
 		if (m_Position.y > pTop) m_Position.y = pTop + epsilon;
 	}
 
-	bool PickUp(const Attire& a)
+	bool Take(const Attire& a)
 	{
-		if (!HasAttire(a.GetType()) && a.IsVisible() && IsOverlapping(a))
-		{
-			m_Attire[a.GetType()] = true;
-			return true;
-		}
+		if (!HasAttire(a.GetType()) && a.IsVisible() && IsOverlapping(a)) return true;
 		return false;
 	}
 
@@ -121,12 +121,12 @@ public:
 		return false;
 	}
 
-	void Attack(std::map<std::string, Player>& playerPool)
+	std::string Attack(std::map<std::string, Player>& playerPool)
 	{
 		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
 		if (std::chrono::duration<float>(now - m_AttackTime).count() <= 1.f)
 		{
-			return;
+			return "";
 		}
 
 		std::vector<int> players(playerPool.size());
@@ -140,10 +140,11 @@ public:
 			if (p.GetId() != m_Id && !IsInSameCult(p) && IsOverlapping(p))
 			{
 				m_AttackTime = now;
-				p.LoseHealth(20);
-				return;
+				//p.LoseHealth(20);
+				return p.GetId();
 			}
 		}
+		return "";
 	}
 
 	bool IsInSameCult(const Player& p) const

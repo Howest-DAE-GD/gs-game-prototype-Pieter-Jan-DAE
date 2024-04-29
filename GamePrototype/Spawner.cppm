@@ -19,9 +19,9 @@ export class Spawner
 	int m_Counter = 0;
 
 public:
-	inline static int SPAWN_TIME_SECONDS = 3;
-	inline static int HAT_COUNT = 3;
-	inline static int CANE_COUNT = 3;
+	inline static int SPAWN_TIME_SECONDS{ 3 };
+	inline static int HAT_COUNT{ 3 };
+	inline static int CANE_COUNT{ 3 };
 
 	Spawner()
 	{

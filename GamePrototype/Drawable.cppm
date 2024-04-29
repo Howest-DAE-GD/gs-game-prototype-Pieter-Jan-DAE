@@ -8,14 +8,13 @@ export module Drawable;
 
 export class Drawable
 {
-protected:
+public:
 	std::vector<std::vector<Point2f>> m_Shapes;
 	Color4f m_Color;
 	Vector2f m_Offset;
 	Vector2f m_Size;
 
-public:
-	inline static bool DRAW_BOUNDINGBOX = true;
+	inline static bool DRAW_BOUNDINGBOX{ true };
 
 	Drawable(const Drawable& d) : m_Shapes{ d.m_Shapes }, m_Color{ d.m_Color }, m_Offset{ d.m_Offset }, m_Size{ d.m_Size } {}
 

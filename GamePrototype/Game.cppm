@@ -6,12 +6,14 @@ module;
 #include <vector>
 #include "structs.h"
 #include "BaseGame.h"
+#include "Vector2f.h"
 
 export module Game;
 
 import Attire;
 import GameObject;
 import GameState;
+import NetworkClient;
 import Player;
 import Random;
 import Spawner;
@@ -19,8 +21,8 @@ import Spawner;
 export class Game : public BaseGame
 {
 	float BASE_SPEED = 200.f;
-	GameState m_State;
-	Spawner m_Spawner;
+	GameState m_GameState;
+	NetworkClient m_NetworkClient{ "localhost", 3000 };
 
 public:
 	explicit Game(const Window& window) : BaseGame{ window }
@@ -40,72 +42,87 @@ public:
 
 	void Update(float elapsedSec) override
 	{
+		m_NetworkClient.GetState(m_GameState);
+		for (auto& p : m_GameState.m_PlayerPool | std::views::values)
+		{
+			if (p.m_Id == m_GameState.m_PlayerId)
+			{
+				p.m_Color = { 0.f, 1.f, 0.f, 1.f };
+			}
+		}
+
+		if (!m_GameState.m_PlayerPool.contains(m_GameState.m_PlayerId))
+		{
+			printf("Trying to update own player [id: %s] but could not find in player list.", m_GameState.m_PlayerId.c_str());
+			return;
+		}
 		// Check keyboard state
 		const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-		auto& you = m_State.m_PlayerPool.at(m_State.m_PlayerId);
+
+		Vector2f movement{};
 		if (pStates[SDL_SCANCODE_RIGHT] || pStates[SDL_SCANCODE_D])
 		{
 			//std::cout << "Right arrow key is down\n";
-			you.Move({ BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
+			movement.x += BASE_SPEED * elapsedSec;
 		}
 		if (pStates[SDL_SCANCODE_LEFT] || pStates[SDL_SCANCODE_A])
 		{
 			//std::cout << "Left arrow key is down\n";
-			you.Move({ -BASE_SPEED * elapsedSec, 0 }, 0, GetViewPort().width, GetViewPort().height, 0);
+			movement.x -= BASE_SPEED * elapsedSec;
 		}
 		if (pStates[SDL_SCANCODE_UP] || pStates[SDL_SCANCODE_W])
 		{
 			//std::cout << "Up arrow key is down\n";
-			you.Move({ 0, BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
+			movement.y += BASE_SPEED * elapsedSec;
 		}
 		if (pStates[SDL_SCANCODE_DOWN] || pStates[SDL_SCANCODE_S])
 		{
 			//std::cout << "Down arrow key is down\n";
-			you.Move({ 0, -BASE_SPEED * elapsedSec }, 0, GetViewPort().width, GetViewPort().height, 0);
+			movement.y -= BASE_SPEED * elapsedSec;
 		}
-		// Update game state
-		for (auto& player : m_State.m_PlayerPool | std::views::values)
-		{
-			PlayerInfo pInfo{};
-			pInfo.id = player.GetId();
-			pInfo.pos = player.m_Position;
-			pInfo.health = player.m_Health;
-			pInfo.maxHealth = player.m_MaxHealth;
-			player.Update(pInfo);
-		}
-		m_Spawner.Spawn(m_State);
+		m_NetworkClient.Move(m_GameState.m_PlayerId, movement);
 	}
 
 	void Draw() const override
 	{
 		ClearBackground();
-		for (auto& player : m_State.m_PlayerPool | std::views::values) player.Draw();
-		for (auto& a : m_State.m_AttirePool | std::views::values) a.Draw();
+		for (auto& player : m_GameState.m_PlayerPool | std::views::values) player.Draw();
+		for (auto& a : m_GameState.m_AttirePool | std::views::values) a.Draw();
 	}
 
 	// Event handling
 	void ProcessKeyDownEvent(const SDL_KeyboardEvent& e) override
 	{
-		auto& you = m_State.m_PlayerPool.at(m_State.m_PlayerId);
+		auto& you = m_GameState.m_PlayerPool.at(m_GameState.m_PlayerId);
 		if (e.keysym.scancode == SDL_SCANCODE_Q)
 		{
-			you.Drop(m_State.m_AttirePool);
+			for (int type = static_cast<int>(you.m_Attire.size()) - 1; type >= 0; --type)
+			{
+				if (you.m_Attire[type] == true)
+				{
+					m_NetworkClient.Drop(m_GameState.m_PlayerId, type);
+					return;
+				}
+			}
 		}
 		if (e.keysym.scancode == SDL_SCANCODE_E)
 		{
-			for (auto& [id, attire] : m_State.m_AttirePool)
+			for (auto& [id, attire] : m_GameState.m_AttirePool)
 			{
-				if (you.PickUp(attire))
+				if (you.Take(attire))
 				{
-					m_State.m_AttirePool.erase(id);
+					m_NetworkClient.Take(m_GameState.m_PlayerId, id);
 					return;
 				}
 			}
 		}
 		if (e.keysym.scancode == SDL_SCANCODE_SPACE)
 		{
-			you.Attack(m_State.m_PlayerPool);
-	}
+			if (const std::string victimId = you.Attack(m_GameState.m_PlayerPool); !victimId.empty())
+			{
+				m_NetworkClient.Attack(m_GameState.m_PlayerId, victimId);
+			}
+		}
 	}
 
 	void ProcessKeyUpEvent(const SDL_KeyboardEvent& e) override
@@ -169,19 +186,7 @@ private:
 	// FUNCTIONS
 	void Initialize()
 	{
-		m_Spawner = {};
-		m_PlayerPool.push_back({ generate_uuid_v4(), {100.f, 100.f} });
-		m_PlayerPool.push_back({ generate_uuid_v4(), {400.f, 400.f} });
-		//m_Player.m_Shape = std::vector<Point2f>{ {-10, -10}, {0, 10}, {10, -10} };
-		//m_Player.PickUp(hat);
-		//m_Player.PickUp(cane);
-
-		//m_PlayerPool.resize(10, GameObject(Point2f(100, 100)));
-		//m_AttirePool.push_back(Attire::Hat());
-
-		//for (int i = 0; i < m_AttirePool.size(); ++i)
-		//{
-		//}
+		m_NetworkClient.JoinGame(m_GameState);
 	}
 
 	void Cleanup()

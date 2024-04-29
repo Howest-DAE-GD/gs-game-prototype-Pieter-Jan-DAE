@@ -151,12 +151,18 @@ xcopy "$(SolutionDir)Resources\*.*" "$(TargetDir)" /y /d /s</Command>
     <ClCompile Include="Attire.cppm" />
     <ClCompile Include="Drawable.cppm" />
     <ClCompile Include="GameState.cppm" />
+    <ClCompile Include="NetworkClient.cppm" />
     <ClCompile Include="Game.cppm" />
     <ClCompile Include="GameObject.cppm" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="parson.c" />
     <ClCompile Include="Player.cppm" />
     <ClCompile Include="Random.cppm" />
     <ClCompile Include="Spawner.cppm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="httplib.h" />
+    <ClInclude Include="parson.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

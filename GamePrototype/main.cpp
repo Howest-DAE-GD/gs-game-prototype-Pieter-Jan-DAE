@@ -31,7 +31,7 @@ int SDL_main(int argv, char** args)
 
 	StartHeapControl();
 
-	Game* pGame{ new Game{ Window{ "The Cult - Vandenberghe, Pieter-Jan - DAEmployed", 1200 , 800 } } };
+	Game* pGame{ new Game{ Window{ "The Cult - Vandenberghe, Pieter-Jan - DAEmployed", 1000 , 1000 } } };
 	pGame->Run();
 	delete pGame;
 

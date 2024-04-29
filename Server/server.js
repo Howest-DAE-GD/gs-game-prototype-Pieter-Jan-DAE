@@ -34,6 +34,10 @@ router.get('/state', (ctx, next) => {
     ctx.set('Content-Type', 'application/json');
 });
 
+router.post('/start', (ctx, next) => {
+    game.start();
+});
+
 router.post('/player', (ctx, next) => {
     const id = game.addPlayer()
     ctx.body = { id };
