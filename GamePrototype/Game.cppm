@@ -88,6 +88,7 @@ public:
 			//std::cout << "Down arrow key is down\n";
 			movement.y -= BASE_SPEED * elapsedSec;
 		}
+		m_GameState.m_PlayerPool.at(m_GameState.m_PlayerId).Move(movement, 0, 1000, 1000, 0);
 		m_NetworkClient.Move(m_GameState.m_PlayerId, movement);
 	}
 

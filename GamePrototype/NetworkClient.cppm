@@ -25,8 +25,14 @@ struct StatusUpdate
 export class NetworkClient
 {
 	httplib::Client m_Client;
+
 	std::chrono::steady_clock::time_point m_LastStatusUpdate = std::chrono::steady_clock::now();
-	const float m_Interval = 1 / 60.f;
+	const float m_GetStatusInterval = 1 / 60.f;
+
+	std::chrono::steady_clock::time_point m_LastMovementUpdate = std::chrono::steady_clock::now();
+	const float m_MoveInterval = 1 / 30.f;
+	Vector2f m_Movement = {};
+
 
 public:
 	NetworkClient(const std::string& url = "http://localhost:3000") :
@@ -49,7 +55,7 @@ public:
 	void GetState(GameState& gameState)
 	{
 		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-		if (std::chrono::duration<float>(now - m_LastStatusUpdate).count() > m_Interval)
+		if (std::chrono::duration<float>(now - m_LastStatusUpdate).count() > m_GetStatusInterval)
 		{
 			const std::chrono::system_clock::time_point sys_time = std::chrono::system_clock::now();
 			const std::time_t now_t = std::chrono::system_clock::to_time_t(sys_time);
@@ -61,17 +67,17 @@ public:
 			printf("%s GetState\n", iso8601.c_str());
 
 			m_LastStatusUpdate = now;
-			std::packaged_task task([&]()
-				{
-					StatusUpdate update = GetStateRequest();
-					if (update.timestamp > gameState.m_Timestamp)
-					{
-						gameState.m_Timestamp = update.timestamp;
-						gameState.UpdatePlayers(update.playerUpdates);
-						gameState.UpdateAttire(update.attireUpdates);
-					}
-				});
-			std::thread(std::move(task)).detach();
+			//std::packaged_task task([&]()
+			//	{
+			StatusUpdate update = GetStateRequest();
+			if (update.timestamp > gameState.m_Timestamp)
+			{
+				gameState.m_Timestamp = update.timestamp;
+				gameState.UpdatePlayers(update.playerUpdates);
+				gameState.UpdateAttire(update.attireUpdates);
+			}
+			//	});
+			//std::thread(std::move(task)).detach();
 		}
 	}
 
@@ -145,66 +151,84 @@ public:
 
 	void Move(const std::string& playerId, const Vector2f& movement)
 	{
-		std::packaged_task task([this, playerId, movement]()
-			{
-				JSON_Value* root_value = json_value_init_object();
-				JSON_Object* root_object = json_value_get_object(root_value);
-				json_object_dotset_number(root_object, "vector.x", movement.x);
-				json_object_dotset_number(root_object, "vector.y", movement.y);
-				char* serialized_string = json_serialize_to_string_pretty(root_value);
-				//printf("%s\n", serialized_string);
-				m_Client.Put("/player/" + playerId + "/move", serialized_string, "application/json");
-				json_free_serialized_string(serialized_string);
-				json_value_free(root_value);
-			});
-		std::thread(std::move(task)).detach();
+		m_Movement += movement;
+		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+		if (std::chrono::duration<float>(now - m_LastMovementUpdate).count() > m_MoveInterval && m_Movement != Vector2f{})
+		{
+			const std::chrono::system_clock::time_point sys_time = std::chrono::system_clock::now();
+			const std::time_t now_t = std::chrono::system_clock::to_time_t(sys_time);
+			std::tm now_tm;
+			gmtime_s(&now_tm, &now_t); // NOLINT(cert-err33-c)
+			std::ostringstream stream;
+			stream << std::put_time(&now_tm, "%FT%TZ");
+			const std::string iso8601 = stream.str();
+			printf("%s Moving x: %f, y: %f\n", iso8601.c_str(), m_Movement.x, m_Movement.y);
+
+			m_LastMovementUpdate = now;
+			const Vector2f movementUpdate = m_Movement;
+
+			//std::packaged_task task([this, playerId, movementUpdate]()
+			//	{
+			JSON_Value* root_value = json_value_init_object();
+			JSON_Object* root_object = json_value_get_object(root_value);
+			json_object_dotset_number(root_object, "vector.x", movementUpdate.x);
+			json_object_dotset_number(root_object, "vector.y", movementUpdate.y);
+			char* serialized_string = json_serialize_to_string_pretty(root_value);
+			//printf("%s\n", serialized_string);
+			m_Client.Put("/player/" + playerId + "/move", serialized_string, "application/json");
+			json_free_serialized_string(serialized_string);
+			json_value_free(root_value);
+			//	});
+			//std::thread(std::move(task)).detach();
+			m_Movement = {};
+		}
 	}
 
 	void Take(const std::string& playerId, const std::string& attireId)
 	{
-		std::packaged_task task([this, playerId, attireId]()
-			{
-				JSON_Value* root_value = json_value_init_object();
-				JSON_Object* root_object = json_value_get_object(root_value);
-				json_object_dotset_string(root_object, "id", attireId.c_str());
-				char* serialized_string = json_serialize_to_string_pretty(root_value);
-				//printf("%s\n", serialized_string);
-				m_Client.Put("/player/" + playerId + "/take", serialized_string, "application/json");
-				json_free_serialized_string(serialized_string);
-				json_value_free(root_value);
-			});
-		std::thread(std::move(task)).detach();
+		//std::packaged_task task([this, playerId, attireId]()
+		//	{
+		JSON_Value* root_value = json_value_init_object();
+		JSON_Object* root_object = json_value_get_object(root_value);
+		json_object_dotset_string(root_object, "id", attireId.c_str());
+		char* serialized_string = json_serialize_to_string_pretty(root_value);
+		//printf("%s\n", serialized_string);
+		m_Client.Put("/player/" + playerId + "/take", serialized_string, "application/json");
+		json_free_serialized_string(serialized_string);
+		json_value_free(root_value);
+		//	});
+		//std::thread(std::move(task)).detach();
 	}
 
 	void Drop(const std::string& playerId, const int attireType)
 	{
-		std::packaged_task task([this, playerId, attireType]()
-			{
-				JSON_Value* root_value = json_value_init_object();
-				JSON_Object* root_object = json_value_get_object(root_value);
-				json_object_dotset_number(root_object, "type", attireType);
-				char* serialized_string = json_serialize_to_string_pretty(root_value);
-				//printf("%s\n", serialized_string);
-				m_Client.Put("/player/" + playerId + "/drop", serialized_string, "application/json");
-				json_free_serialized_string(serialized_string);
-				json_value_free(root_value);
-			});
-		std::thread(std::move(task)).detach();
+		//std::packaged_task task([this, playerId, attireType]()
+		//	{
+		JSON_Value* root_value = json_value_init_object();
+		JSON_Object* root_object = json_value_get_object(root_value);
+		json_object_dotset_number(root_object, "type", attireType);
+		char* serialized_string = json_serialize_to_string_pretty(root_value);
+		//printf("%s\n", serialized_string);
+		m_Client.Put("/player/" + playerId + "/drop", serialized_string, "application/json");
+		json_free_serialized_string(serialized_string);
+		json_value_free(root_value);
+		//	});
+		//std::thread(std::move(task)).detach();
 	}
 
 	void Attack(const std::string& playerId, const std::string& victimId)
 	{
-		std::packaged_task task([this, playerId, victimId]()
-			{
-				JSON_Value* root_value = json_value_init_object();
-				JSON_Object* root_object = json_value_get_object(root_value);
-				json_object_dotset_string(root_object, "id", victimId.c_str());
-				char* serialized_string = json_serialize_to_string_pretty(root_value);
-				//printf("%s\n", serialized_string);
-				m_Client.Put("/player/" + playerId + "/attack", serialized_string, "application/json");
-				json_free_serialized_string(serialized_string);
-				json_value_free(root_value);
-			});
-		std::thread(std::move(task)).detach();
+		//std::packaged_task task([this, playerId, victimId]()
+		//	{
+		JSON_Value* root_value = json_value_init_object();
+		JSON_Object* root_object = json_value_get_object(root_value);
+		json_object_dotset_string(root_object, "id", victimId.c_str());
+		char* serialized_string = json_serialize_to_string_pretty(root_value);
+		//printf("%s\n", serialized_string);
+		m_Client.Put("/player/" + playerId + "/attack", serialized_string, "application/json");
+		json_free_serialized_string(serialized_string);
+		json_value_free(root_value);
+		//	});
+		//std::thread(std::move(task)).detach();
 	}
 };
