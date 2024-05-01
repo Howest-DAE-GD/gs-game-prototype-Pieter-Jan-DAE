@@ -60,20 +60,24 @@ public:
 	void Draw() const override
 	{
 		if (!m_Visible) return;
+		if (m_Health > 0) GameObject::Draw();
+		Transform t{};
+		t.Position = m_Position;
+		t.ApplyTransformation();
 		if (m_Health > 0)
 		{
-			GameObject::Draw();
-			Transform t{};
-			t.Position = m_Position;
-			t.ApplyTransformation();
 			utils::FillEllipse(Point2f{ 0, 7.f / 6.f * SIZE }, SIZE / 3.f, SIZE / 3.f);
 			for (int i = 0; i < m_Attire.size(); ++i)
 			{
 				if (m_Attire[i]) Attire::GetDrawable(i).Draw(true);
 			}
 			DrawHealth();
-			t.ResetTransformation();
 		}
+		else
+		{
+			DrawGraveMarker();
+		}
+		t.ResetTransformation();
 	}
 
 	void DrawHealth() const
@@ -84,6 +88,13 @@ public:
 		utils::DrawLine(-barW / 2, y, barW / 2, y, 4);
 		utils::SetColor({ 1, 0, 0, 1 });
 		utils::DrawLine(barW / 2 - barW * (m_MaxHealth - m_Health) / m_MaxHealth, y, barW / 2, y, 4);
+	}
+
+	void DrawGraveMarker() const
+	{
+		utils::SetColor({ 1, 1, 1, 1 });
+		utils::DrawLine(0, SIZE, 0, -SIZE, 4);
+		utils::DrawLine(-SIZE / 2, SIZE / 2, SIZE / 2, SIZE / 2, 4);
 	}
 
 	void Move(const Vector2f movement, float left, float right, float top, float bottom)

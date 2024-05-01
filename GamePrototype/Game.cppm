@@ -51,6 +51,8 @@ public:
 			}
 		}
 
+		if (m_GameState.m_GameOver) return;
+
 		if (!m_GameState.m_PlayerPool.contains(m_GameState.m_PlayerId))
 		{
 			printf("Trying to update own player [id: %s] but could not find in player list.", m_GameState.m_PlayerId.c_str());
@@ -93,6 +95,8 @@ public:
 	// Event handling
 	void ProcessKeyDownEvent(const SDL_KeyboardEvent& e) override
 	{
+		if (m_GameState.m_GameOver) return;
+
 		auto& you = m_GameState.m_PlayerPool.at(m_GameState.m_PlayerId);
 		if (e.keysym.scancode == SDL_SCANCODE_Q)
 		{

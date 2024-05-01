@@ -36,7 +36,14 @@ public:
 
 	void UpdatePlayer(const PlayerInfo& pInfo)
 	{
-		if (m_PlayerPool.contains(pInfo.id)) m_PlayerPool.at(pInfo.id).Update(pInfo);
+		if (m_PlayerPool.contains(pInfo.id))
+		{
+			m_PlayerPool.at(pInfo.id).Update(pInfo);
+			if (pInfo.id == m_PlayerId && pInfo.health <= 0.0001f)
+			{
+				m_GameOver = true;
+			}
+		}
 		else m_PlayerPool.insert(std::pair(pInfo.id, Player(pInfo.id, pInfo.pos, pInfo.health, pInfo.maxHealth)));
 	}
 
