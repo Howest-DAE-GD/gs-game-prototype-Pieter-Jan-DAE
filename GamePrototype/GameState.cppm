@@ -14,6 +14,7 @@ import Random;
 export class GameState
 {
 public:
+	std::string m_Timestamp = "1979-12-25";
 	std::string m_PlayerId;
 	std::map<std::string, Player> m_PlayerPool;
 	std::map<std::string, Attire> m_AttirePool;

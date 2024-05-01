@@ -128,7 +128,7 @@ export class Game {
     }
 
     getState() {
-        return { players: this.players, attire: this.attire };
+        return { timestamp: new Date().toISOString(), players: this.players, attire: this.attire };
     }
 
     hasStateChanged() {
