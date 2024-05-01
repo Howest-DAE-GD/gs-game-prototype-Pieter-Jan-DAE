@@ -15,23 +15,25 @@
 #include <SDL_ttf.h> 
 #include <SDL_mixer.h> 
 #include <SDL_image.h>
-
 #include <ctime>
+
 #include "structs.h"
 #include "SVGParser.h"
 
 import Game;
 
+GameSettings ParseCommandLineArguments(int argc, char** argv);
 void StartHeapControl();
 void DumpMemoryLeaks();
 
-int SDL_main(int argv, char** args)
+int SDL_main(int argc, char** argv)
 {
 	srand(static_cast<unsigned int>(time(nullptr)));
 
 	StartHeapControl();
 
-	Game* pGame{ new Game{ Window{ "The Cult - Vandenberghe, Pieter-Jan - DAEmployed", 1000 , 1000 } } };
+	const GameSettings settings = ParseCommandLineArguments(argc, argv);
+	Game* pGame{ new Game{ Window{ "The Cult - Vandenberghe, Pieter-Jan - DAEmployed", 1000 , 1000 }, settings } };
 	pGame->Run();
 	delete pGame;
 
@@ -39,6 +41,18 @@ int SDL_main(int argv, char** args)
 	return 0;
 }
 
+GameSettings ParseCommandLineArguments(int argc, char** argv)
+{
+	GameSettings settings{};
+	settings.url = "localhost:3000";
+	for (int i = 1; i < argc - 1; i++) {
+		if ((strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--host") == 0)) {
+			settings.url = std::string(argv[i + 1]);
+		}
+	}
+	printf("Using host: %s\n", settings.url.c_str());
+	return settings;
+}
 
 void StartHeapControl()
 {
@@ -60,5 +74,3 @@ void DumpMemoryLeaks()
 	_CrtDumpMemoryLeaks();
 #endif
 }
-
-

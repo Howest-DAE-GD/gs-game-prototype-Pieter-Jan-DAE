@@ -34,11 +34,6 @@ public:
 	{
 	}
 
-	NetworkClient(const std::string& host = "localhost", const int port = 3000) :
-		m_Client{ httplib::Client(host, port) }
-	{
-	}
-
 	void JoinGame(GameState& gameState)
 	{
 		auto res = m_Client.Post("/player");

@@ -18,14 +18,20 @@ import Player;
 import Random;
 import Spawner;
 
+export struct GameSettings
+{
+	std::string url = "http://localhost:3000";
+};
+
 export class Game : public BaseGame
 {
 	float BASE_SPEED = 200.f;
 	GameState m_GameState;
-	NetworkClient m_NetworkClient{ "localhost", 3000 };
+	NetworkClient m_NetworkClient;
 
 public:
-	explicit Game(const Window& window) : BaseGame{ window }
+	explicit Game(const Window& window, const GameSettings& settings) : BaseGame{ window },
+		m_NetworkClient{ settings.url }
 	{
 		Initialize();
 	}
